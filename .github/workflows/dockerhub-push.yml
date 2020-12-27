@@ -3,6 +3,8 @@ name: Docker Image CI
 on:
   push:
     branches: [ main ]
+  schedule:
+    - cron: '00 00 1,15 * *'
 
 jobs:
   findversions:
@@ -12,7 +14,10 @@ jobs:
     steps:
     - id: versions
       run: |
-        versions=$(curl -s https://api.github.com/repos/kubernetes-sigs/kubespray/tags | jq -cr '[.[].name]' )
+        versions=$(
+          curl -s https://api.github.com/repos/kubernetes-sigs/kubespray/tags \
+            | jq -cr '[.[].name]+["master"]'
+          )
         echo "Versions: ${versions}"
         echo "::set-output name=versions::${versions}"
   build:
