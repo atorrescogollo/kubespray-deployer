@@ -1,0 +1,24 @@
+- hostname: master1
+  type: master
+  vars:
+    ansible_host: "10.0.0.10"
+    ansible_user: admin
+    ansible_become: yes
+- hostname: master2
+  type: master
+  vars:
+    ansible_host: "10.0.0.11"
+    ansible_user: admin
+    ansible_become: yes
+- hostname: worker1
+  type: worker
+  vars:
+    ansible_host: "10.0.0.12"
+    ansible_user: admin
+    ansible_become: yes
+- hostname: worker2
+  type: worker
+  vars:
+    ansible_host: "10.0.0.13"
+    ansible_user: admin
+    ansible_become: yes

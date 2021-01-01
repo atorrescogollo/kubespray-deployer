@@ -1,0 +1,32 @@
+[all]
+{% for node in master_nodes %}
+{{node.hostname}} etcd_member_name=etcd{{loop.index}}
+{%- for k,v in (node.vars|default({})).items() %} {{k}}={{v|quote}}{%- endfor %}
+
+{% endfor %}
+{% for node in worker_nodes %}
+{{node.hostname}}
+{%- for k, v in (node.vars|default({})).items() %} {{k}}={{v|quote}}{%- endfor %}
+{% endfor %}
+
+[kube-master]
+{% for node in master_nodes %}
+{{node.hostname}}
+{% endfor %}
+
+[etcd]
+{% for node in master_nodes %}
+{{node.hostname}}
+{% endfor %}
+
+[kube-node]
+{% for node in worker_nodes %}
+{{node.hostname}}
+{% endfor %}
+
+[calico-rr]
+
+[k8s-cluster:children]
+kube-master
+kube-node
+calico-rr
