@@ -1,0 +1,2 @@
+argocd_namespace: argocd
+argocd_version_tag: stable

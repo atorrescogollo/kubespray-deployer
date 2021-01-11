@@ -4,12 +4,12 @@
   gather_facts: no
   vars:
     _infile: "{{infile|default('../cluster_inventory.yml')}}"
-    _outfile: "{{outfile|default('../inventory.ini')}}"
+    _outfile: "{{outfile|default('../kubespray_inventory.ini')}}"
     cluster_inventory: "{{ lookup('file', _infile) | from_yaml }}"
   tasks:
   - template:
       dest: "{{_outfile}}"
-      src: ../templates/inventory.ini.j2
+      src: ../templates/kubespray_inventory.ini.j2
     vars:
       master_nodes: '{{cluster_inventory|selectattr("type", "equalto", "master")|list}}'
       worker_nodes: '{{cluster_inventory|selectattr("type", "equalto", "worker")|list}}'

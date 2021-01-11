@@ -1,0 +1,66 @@
+- name: ArgoCD | Delete addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/argocd"
+    state: absent
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: ArgoCD | Create addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/argocd"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: ArgoCD | Templates list
+  set_fact:
+    argocd_templates:
+      - name: namespace
+        file: namespace.yml
+      - name: installer
+        file: "installer-{{argocd_version_tag}}.yml"
+        namespace: "{{ argocd_namespace }}"
+        url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{argocd_version_tag}}/manifests/install.yaml"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: ArgoCD | Download remote manifests
+  become: yes
+  get_url:
+    url: "{{ item.url }}"
+    dest: "{{ kube_config_dir }}/addons/argocd/{{ item.file }}"
+  with_items: "{{ argocd_templates | selectattr('url', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: ArgoCD | Create manifests from templates
+  become: yes
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ kube_config_dir }}/addons/argocd/{{ item.file }}"
+  with_items: "{{ argocd_templates | selectattr('url', 'undefined') | list }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: ArgoCD | Apply manifests
+  kube:
+    name: "{{ item.name }}"
+    kubectl: "{{ bin_dir }}/kubectl"
+    resource: "{{ item.type | default(omit) }}"
+    filename: "{{ kube_config_dir }}/addons/argocd/{{ item.file }}"
+    namespace: "{{ item.namespace | default(omit) }}"
+    state: latest
+  with_items: "{{ argocd_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]

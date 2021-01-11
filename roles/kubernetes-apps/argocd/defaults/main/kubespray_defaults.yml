@@ -1,0 +1,2 @@
+kube_config_dir: /etc/kubernetes
+bin_dir: /usr/local/bin

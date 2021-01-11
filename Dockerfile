@@ -1,17 +1,13 @@
 ARG KUBESPRAY_VERSION=v2.14.2
 FROM thesoul/kubespray:${KUBESPRAY_VERSION}
 
-ENV KUBESPRAY_HOME=/kubespray
-
-ENV WORKDIR=/work
-
-# Input file with cluster information
-ENV CLUSTER_INVENTORY=$WORKDIR/cluster_inventory.yml
-ENV KUBESPRAY_INVENTORY=$WORKDIR/kubespray_inventory.ini
+ENV KUBESPRAY_HOME=/kubespray \
+    DEPLOYER_HOME=/deployer \
+    CLUSTER_INVENTORY=/work/cluster_inventory.yml \
+    KUBESPRAY_INVENTORY=/work/kubespray_inventory.ini
 
 # Add this repo to /deployer
 ADD . /deployer
-RUN mkdir -p $WORKDIR && chmod 700 /deployer/deploy.sh
+RUN chmod 700 /deployer/docker_entrypoint.sh && mkdir -p /work
 WORKDIR /deployer
-
-ENTRYPOINT [ "/deployer/deploy.sh" ]
+ENTRYPOINT [ "/deployer/docker_entrypoint.sh" ]

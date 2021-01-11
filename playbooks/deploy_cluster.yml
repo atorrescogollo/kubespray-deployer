@@ -1,0 +1,14 @@
+- name: "[DEPLOY_CLUSTER] Call \"cluster.yml\" from kubespray"
+  vars:
+    kubespray_home: "{{ lookup('env', 'KUBESPRAY_HOME') | default('/kubespray') }}"
+    deployer_home:  "{{ lookup('env', 'DEPLOYER_HOME')  | default('/deployer')  }}"
+  import_playbook: "{{kubespray_home}}/cluster.yml"
+
+- name: "[DEPLOY_CLUSTER] Install kubernetes-apps"
+  hosts: kube-master
+  vars:
+    kubespray_home: "{{ lookup('env', 'KUBESPRAY_HOME') | default('/kubespray') }}"
+    deployer_home:  "{{ lookup('env', 'DEPLOYER_HOME')  | default('/deployer')  }}"
+  roles:
+  - name: "[DEPLOY_CLUSTER] Install argocd"
+    role: "{{deployer_home}}/roles/kubernetes-apps/argocd"
