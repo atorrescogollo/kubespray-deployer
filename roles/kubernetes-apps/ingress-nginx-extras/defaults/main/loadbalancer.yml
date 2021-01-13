@@ -1,0 +1,4 @@
+# Auto-enable loadbalancer only if metallb is enabled
+ingress_nginx_loadbalancer: "{{ metallb_enabled }}"
+ingress_nginx_loadbalancer_type: metallb
+ingress_nginx_loadbalancer_metallb_pool: loadbalanced

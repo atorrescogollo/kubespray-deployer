@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dex
+  namespace: {{ dex_namespace }}
+data:
+  config.yaml: |
+    issuer: https://auth.{{ ingress_dns_wildcard_base }}/
+    web:
+      http: 0.0.0.0:5556
+    expiry:
+      signingKeys: {{ dex_signingkeys_expiration }}
+      idTokens: {{ dex_idtokens_expiration }}
+    frontend:
+      theme: custom
+    telemetry:
+      http: 0.0.0.0:5558
+    staticClients:
+    - id: oidc-auth-client
+      redirectURIs:
+      - 'https://kubectl.{{ ingress_dns_wildcard_base }}/callback'
+      name: 'oidc-auth-client'
+      secret: {{ oidc_static_secret }}
+    connectors:
+    - type: ldap
+      id: ldap
+      name: LDAP
+      config:
+        host: "{{ dex_connector_ldap_host }}"
+        use_tls: {{ dex_connector_ldap_use_tls }}
+        insecureNoSSL: {{ dex_connector_ldap_insecure_no_ssl }}
+        insecureSkipVerify: {{ dex_connector_ldap_insecure_skip_verify }}
+{% if dex_connector_ldap_cacert is defined %}
+        rootCA: /etc/dex/cfg/connector_ldap_ca.crt
+{% endif %}
+        bindDN: "{{ dex_connector_ldap_binddn }}"
+        bindPW: "{{ dex_connector_ldap_bindpw }}"
+        userSearch:
+          baseDN: "{{ dex_connector_ldap_usersearch_basedn }}"
+          filter: "{{ dex_connector_ldap_usersearch_filter }}"
+          username: "{{ dex_connector_ldap_usersearch_username }}"
+          idAttr: "{{ dex_connector_ldap_usersearch_idattr }}"
+          emailAttr: "{{ dex_connector_ldap_usersearch_emailattr }}"
+          nameAttr: "{{ dex_connector_ldap_usersearch_nameattr }}"
+        groupSearch:
+          baseDN: "{{ dex_connector_ldap_groupsearch_basedn }}"
+          filter: "{{ dex_connector_ldap_groupsearch_filter }}"
+          userAttr: "{{ dex_connector_ldap_groupsearch_userattr }}"
+          groupAttr: "{{ dex_connector_ldap_groupsearch_groupattr }}"
+          nameAttr: "{{ dex_connector_ldap_groupsearch_nameattr }}"
+    oauth2:
+      skipApprovalScreen: {{ dex_oauth2_skipapprovalscreen }}
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+{% if dex_connector_ldap_cacert is defined %}
+  connector_ldap_ca.crt: |
+    {{ dex_connector_ldap_cacert | indent( width=4 ) }}
+{% endif %}

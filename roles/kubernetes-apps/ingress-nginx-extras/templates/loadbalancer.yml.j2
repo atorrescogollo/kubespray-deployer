@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+{% if ingress_nginx_loadbalancer_type == 'metallb' %}
+  annotations:
+    metallb.universe.tf/address-pool: "{{ ingress_nginx_loadbalancer_metallb_pool }}"
+{% endif %}
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+  name: ingress-nginx
+  namespace: "{{ ingress_nginx_namespace }}"
+spec:
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+  ports:
+  - name: http
+    port: {{ ingress_nginx_insecure_port|int}}
+    protocol: TCP
+    targetPort: {{ ingress_nginx_insecure_port|int}}
+  - name: https
+    port: {{ ingress_nginx_secure_port|int}}
+    protocol: TCP
+    targetPort: {{ ingress_nginx_secure_port|int}}
+  type: LoadBalancer

@@ -20,12 +20,10 @@
 - name: ArgoCD | Templates list
   set_fact:
     argocd_templates:
-      - name: namespace
-        file: namespace.yml
-      - name: installer
-        file: "installer-{{argocd_version_tag}}.yml"
-        namespace: "{{ argocd_namespace }}"
-        url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{argocd_version_tag}}/manifests/install.yaml"
+    - file: namespace.yml
+    - file: "installer-{{argocd_version_tag}}.yml"
+      namespace: "{{ argocd_namespace }}"
+      url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{argocd_version_tag}}/manifests/install.yaml"
   when:
     - inventory_hostname == groups['kube-master'][0]
 
@@ -52,10 +50,9 @@
     - inventory_hostname == groups['kube-master'][0]
 
 - name: ArgoCD | Apply manifests
+  become: yes
   kube:
-    name: "{{ item.name }}"
     kubectl: "{{ bin_dir }}/kubectl"
-    resource: "{{ item.type | default(omit) }}"
     filename: "{{ kube_config_dir }}/addons/argocd/{{ item.file }}"
     namespace: "{{ item.namespace | default(omit) }}"
     state: latest

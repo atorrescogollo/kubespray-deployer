@@ -1,0 +1,14 @@
+- name: "OIDC-Gangway-Dex | Assert parameters"
+  assert:
+    that:
+    - cluster_name is defined
+    - "'.' not in cluster_name"
+    - gangway_trust_ca_certificate is defined
+    - oidc_ca_certificate is defined
+    - oidc_static_secret is defined
+    - dex_connector_ldap_host is defined
+    - dex_connector_ldap_binddn is defined
+    - dex_connector_ldap_bindpw is defined
+    - dex_connector_ldap_usersearch_basedn is defined
+    - dex_connector_ldap_groupsearch_basedn is defined
+  when: oidc_gangway_dex_enabled

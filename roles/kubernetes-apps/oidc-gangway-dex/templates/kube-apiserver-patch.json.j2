@@ -1,0 +1,41 @@
+{#
+  Need this parameters in kube-api pod:
+  https://dexidp.io/docs/kubernetes/#configuring-the-openid-connect-plugin
+#}
+[
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-issuer-url=https://auth.{{ingress_dns_wildcard_base}}/"
+  },
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-ca-file=/usr/local/share/ca-certificates/oidc-ca.crt"
+  },
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-client-id=oidc-auth-client"
+  },
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-username-claim=name"
+  },
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-username-prefix=AD:"
+  },
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-groups-claim=name"
+  },
+  {
+    "op": "add",
+    "path": "/spec/containers/0/command/-",
+    "value": "--oidc-groups-prefix=AD:"
+  }
+]

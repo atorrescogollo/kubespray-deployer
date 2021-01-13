@@ -1,0 +1,81 @@
+- name: Ingress Nginx Extras | Delete addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/ingress_nginx_extras"
+    state: absent
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Ingress Nginx Extras | Create addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/ingress_nginx_extras"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Ingress Nginx Extras | Templates list
+  set_fact:
+    ingress_nginx_extras_templates:
+    - file: loadbalancer.yml
+      when: "{{ ingress_nginx_loadbalancer }}"
+    - file: tls-secret.yml
+      when: "{{ ingress_nginx_tls_cert is defined }}"
+      sensitive_data: yes
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Ingress Nginx Extras | Create manifests from templates
+  become: yes
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ kube_config_dir }}/addons/ingress_nginx_extras/{{ item.file }}"
+    owner: "{{ 'root' if item.sensitive_data|default(false) else omit }}"
+    group: "{{ 'root' if item.sensitive_data|default(false) else omit }}"
+    mode: "{{  '0600' if item.sensitive_data|default(false) else omit }}"
+  with_items: "{{ ingress_nginx_extras_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - item.when | default(true)
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Ingress Nginx Extras | Apply manifests
+  become: yes
+  kube:
+    filename: "{{ kube_config_dir }}/addons/ingress_nginx_extras/{{ item.file }}"
+    state: latest
+  with_items: "{{ ingress_nginx_extras_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - item.when | default(true)
+    - inventory_hostname == groups['kube-master'][0]
+
+- block:
+  - name: Ingress Nginx Extras | Retrieve controller manifest
+    become: yes
+    command: "kubectl -n {{ingress_nginx_namespace|quote}} get daemonset ingress-nginx-controller -o yaml"
+    when: ingress_nginx_tls_cert is defined
+    register: nginx_ingress_controller_manifest
+
+  - block:
+    - name: Ingress Nginx Extras | Upload 'default-ssl-certificate' daemonset patch
+      become: yes
+      template:
+        src: "controller-default-ssl-cert-patch.json.j2"
+        dest: "{{ kube_config_dir }}/addons/ingress_nginx_extras/controller-default-ssl-cert-patch.json.j2"
+      when:
+        - inventory_hostname == groups['kube-master'][0]
+
+    - name: Ingress Nginx Extras | Apply daemonset patch
+      become: yes
+      command: "kubectl patch -n {{ingress_nginx_namespace}} daemonset ingress-nginx-controller --type json -p {{ lookup('template','controller-default-ssl-cert-patch.json.j2') | quote }}"
+      when:
+        - inventory_hostname == groups['kube-master'][0]
+
+    when: "'--default-ssl-certificate' not in nginx_ingress_controller_manifest.stdout"
+  when: ingress_nginx_tls_cert is defined

@@ -1,0 +1,22 @@
+{#
+  https://github.com/heptiolabs/gangway/blob/master/docs/yaml/02-config.yaml
+#}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gangway
+  namespace: {{ gangway_namespace }}
+data:
+  gangway.yaml: |
+    clusterName: "{{ cluster_name }}"
+    apiServerURL: "https://{{ access_ip | default(ansible_default_ipv4.address) }}:{{ kube_apiserver_port | default(6443) }}"
+    authorizeURL: "https://auth.{{ ingress_dns_wildcard_base }}/auth"
+    tokenURL: "https://auth.{{ ingress_dns_wildcard_base }}/token"
+    trustedCAPath: "/gangway/ca.crt"
+    clientID: "oidc-auth-client"
+    clientSecret: "{{ oidc_static_secret }}"
+    redirectURL: "https://kubectl.{{ ingress_dns_wildcard_base }}/callback"
+    scopes: ["openid", "profile", "email", "groups", "offline_access"]
+    usernameClaim: "name"
+  ca.crt: |
+    {{ gangway_trust_ca_certificate | indent( width=4 ) }}

@@ -1,0 +1,10 @@
+{#
+  Set default certificate for the ingress
+#}
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/args/-",
+    "value": "--default-ssl-certificate={{ingress_nginx_namespace}}/ingress-nginx-tls"
+  }
+]

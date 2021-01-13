@@ -1,0 +1,68 @@
+{#
+    https://github.com/heptiolabs/gangway/blob/master/docs/yaml/03-deployment.yaml
+#}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gangway
+  namespace: {{ gangway_namespace }}
+  labels:
+    app: gangway
+    component: auth-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gangway
+  strategy:
+  template:
+    metadata:
+      labels:
+        app: gangway
+        component: auth-system
+        revision: "{{ansible_date_time.iso8601_basic_short}}"
+    spec:
+      containers:
+        - name: gangway
+          image: gcr.io/heptio-images/gangway:{{ gangway_version }}
+          imagePullPolicy: Always
+          command: ["gangway", "-config", "/gangway/gangway.yaml"]
+          env:
+            - name: GANGWAY_SESSION_SECURITY_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gangway-key
+                  key: sesssionkey
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
+          volumeMounts:
+            - name: gangway
+              mountPath: /gangway/
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 60
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            timeoutSeconds: 1
+            periodSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: gangway
+          configMap:
+            name: gangway

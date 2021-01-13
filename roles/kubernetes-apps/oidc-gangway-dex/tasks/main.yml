@@ -1,0 +1,122 @@
+- name: OIDC-Gangway-Dex | Delete addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/oidc-gangway-dex"
+    state: absent
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: OIDC-Gangway-Dex | Create addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/oidc-gangway-dex"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: OIDC-Gangway-Dex | Retrieve contents of kube-apiserver.yaml
+  become: yes
+  command: cat /etc/kubernetes/manifests/kube-apiserver.yaml
+  register: kube_apiserver_manifest
+
+- block:
+  - name: OIDC-Gangway-Dex | Upload OIDC CA certificate
+    become: yes
+    copy:
+      content: "{{ oidc_ca_certificate }}"
+      dest: /usr/local/share/ca-certificates/oidc-ca.crt
+    register: oidc_ca_file
+
+  - name: OIDC-Gangway-Dex | Update CA certificates
+    become: yes
+    command: "update-ca-certificates"
+    when: oidc_ca_file.changed
+
+  - name: OIDC-Gangway-Dex | Upload patch for API Server Pod
+    become: yes
+    template:
+      src: "kube-apiserver-patch.json.j2"
+      dest: "{{ kube_config_dir }}/addons/oidc-gangway-dex/kube-apiserver-patch.json"
+    when:
+      - inventory_hostname == groups['kube-master'][0]
+
+  - name: OIDC-Gangway-Dex | Generate patched API Server Pod manifest
+    become: yes
+    shell: |
+      kubectl patch \
+        --dry-run=client \
+        -f /etc/kubernetes/manifests/kube-apiserver.yaml \
+        -o yaml \
+        --type json -p "$(cat {{kube_config_dir}}/addons/oidc-gangway-dex/kube-apiserver-patch.json)"
+    register: kube_apiserver_manifest_patched
+    when:
+      - inventory_hostname == groups['kube-master'][0]
+
+  - name: OIDC-Gangway-Dex | Update API Server Pod manifest
+    become: yes
+    copy:
+      content: "{{kube_apiserver_manifest_patched.stdout}}"
+      dest: /etc/kubernetes/manifests/kube-apiserver.yaml
+    when:
+      - inventory_hostname == groups['kube-master'][0]
+
+  - name: OIDC-Gangway-Dex | Wait for API servers to be running
+    uri:
+      url: "https://{{ access_ip | default(ansible_default_ipv4.address) }}:{{ kube_apiserver_port | default(6443) }}/healthz"
+      validate_certs: no
+      status_code: 200
+    register: result
+    when: inventory_hostname in groups['kube-master']
+    until: result.status == 200
+    retries: 30
+    delay: 10
+
+  when: "'--oidc-client-id' not in kube_apiserver_manifest.stdout"
+
+- name: OIDC-Gangway-Dex | Templates list
+  set_fact:
+    oidc_templates:
+    - file: namespaces.yml
+    - file: secrets.yml
+      sensitive_data: yes
+    - file: dex_rbac.yml
+    - file: dex_configmap.yml
+      sensitive_data: yes
+    - file: dex_deployment.yml
+    - file: dex_service.yml
+    - file: gangway_configmap.yml
+      sensitive_data: yes
+    - file: gangway_deployment.yml
+    - file: gangway_service.yml
+    - file: ingresses.yml
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: OIDC-Gangway-Dex | Create manifests from templates
+  become: yes
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ kube_config_dir }}/addons/oidc-gangway-dex/{{ item.file }}"
+    owner: "{{ 'root' if item.sensitive_data|default(false) else omit }}"
+    group: "{{ 'root' if item.sensitive_data|default(false) else omit }}"
+    mode: "{{  '0600' if item.sensitive_data|default(false) else omit }}"
+  with_items: "{{ oidc_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: OIDC-Gangway-Dex | Apply manifests
+  become: yes
+  kube:
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/addons/oidc-gangway-dex/{{ item.file }}"
+    state: latest
+  with_items: "{{ oidc_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]

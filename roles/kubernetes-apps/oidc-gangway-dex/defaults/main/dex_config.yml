@@ -1,0 +1,42 @@
+dex_signingkeys_expiration: 6h
+dex_idtokens_expiration: 24h
+
+# Connector LDAP configuration
+### General
+dex_connector_ldap_use_tls: true
+dex_connector_ldap_insecure_no_ssl: false
+dex_connector_ldap_insecure_skip_verify: false
+
+dex_oauth2_skipapprovalscreen: true
+
+### Filters
+dex_connector_ldap_usersearch_filter: "(objectClass=user)"
+dex_connector_ldap_groupsearch_filter: "(objectClass=group)"
+# Advanced example:
+# (&
+#   (objectClass=user)
+#   (|
+#     (memberOf:1.2.840.113556.1.4.1941:=CN=users-k8s1,OU=kubernetes,DC=example,DC=org)
+#     (memberOf:1.2.840.113556.1.4.1941:=CN=admins-k8s1,OU=kubernetes,DC=example,DC=org)
+#   )
+# )
+# dex_connector_ldap_usersearch_filter: "
+#   {%- set basic = '(objectClass=user)' -%}
+#   {%- set adgroups = [] -%}
+#   {{- adgroups.append('CN=users-'  + cluster_name + ',OU=kubernetes,DC=example,DC=org') -}}
+#   {{- adgroups.append('CN=admins-' + cluster_name + ',OU=kubernetes,DC=example,DC=org') -}}
+#   {%- set adgroups        = adgroups|map('regex_replace', '^', 'memberOf:1.2.840.113556.1.4.1941:=') -%}
+#   {%- set adgroups_filter = '(' + adgroups|join(')(') + ')' -%}
+#   {{- '(&' + basic + '(|' + adgroups_filter + '))' -}}
+#   "
+
+### User Search Bindings
+dex_connector_ldap_usersearch_username: sAMAccountName
+dex_connector_ldap_usersearch_idattr: DN
+dex_connector_ldap_usersearch_emailattr: mail
+dex_connector_ldap_usersearch_nameattr: cn
+
+### User Search Bindings
+dex_connector_ldap_groupsearch_userattr: DN
+dex_connector_ldap_groupsearch_groupattr: member
+dex_connector_ldap_groupsearch_nameattr: cn

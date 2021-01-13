@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dex
+  namespace: {{ dex_namespace }}
+spec:
+  rules:
+  - host: "auth.{{ ingress_dns_wildcard_base }}"
+    http:
+      paths:
+      - backend:
+          serviceName: dex
+          servicePort: 5556
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gangway
+  namespace: {{ gangway_namespace }}
+spec:
+  rules:
+  - host: "kubectl.{{ ingress_dns_wildcard_base }}"
+    http:
+      paths:
+      - backend:
+          serviceName: gangway-svc
+          servicePort: http

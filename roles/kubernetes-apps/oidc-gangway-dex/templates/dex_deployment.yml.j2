@@ -1,0 +1,79 @@
+{#
+    https://github.com/dexidp/dex/blob/master/examples/k8s/dex.yaml
+#}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dex
+    component: auth-system
+  name: dex
+  namespace: {{ dex_namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dex
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: dex
+        component: auth-system
+        revision: "{{ansible_date_time.iso8601_basic_short}}"
+    spec:
+      initContainers:
+      - name: dl-theme
+        image: alpine/git
+        command:
+         - git
+         - clone
+         - "{{ dex_frontend_theme }}"
+         - /theme
+        volumeMounts:
+        - name: theme
+          mountPath: /theme/
+      containers:
+      - command:
+        - /usr/local/bin/dex
+        - serve
+        - /etc/dex/cfg/config.yaml
+        image: quay.io/dexidp/dex:{{ dex_version }}
+        imagePullPolicy: IfNotPresent
+        name: dex
+        ports:
+        - containerPort: 5556
+          name: http
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/dex/cfg
+          name: config
+        - mountPath: /web/themes/custom/
+          name: theme
+      dnsPolicy: ClusterFirst
+      serviceAccountName: dex
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: config.yaml
+            path: config.yaml
+{% if dex_connector_ldap_cacert is defined %}
+          - key: connector_ldap_ca.crt
+            path: connector_ldap_ca.crt
+{% endif %}
+          name: dex
+        name: config
+      - name: theme
+        emptyDir: {}

@@ -1,0 +1,4 @@
+oidc_gangway_dex_enabled: no
+
+dns_search_domain: "{{ inventory_hostname.split('.')[1:] | join('.') }}"
+ingress_dns_wildcard_base: "{{ cluster_name }}.{{ dns_search_domain }}"

@@ -1,0 +1,7 @@
+- name: "Ingress Nginx Extras | Assert parameters"
+  assert:
+    that:
+    - ingress_nginx_loadbalancer_type in ingress_nginx_loadbalancer_valid_types
+    - ingress_nginx_loadbalancer_metallb_pool=='loadbalanced' or ingress_nginx_loadbalancer_metallb_pool in metallb_additional_address_pools.keys()|list
+    - ( ingress_nginx_tls_cert is defined and ingress_nginx_tls_key is defined ) or ( ingress_nginx_tls_cert is undefined and ingress_nginx_tls_key is undefined )
+  when: ingress_nginx_loadbalancer
