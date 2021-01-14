@@ -3,3 +3,5 @@ metallb_enabled: no
 ingress_nginx_namespace: "ingress-nginx"
 ingress_nginx_insecure_port: 80
 ingress_nginx_secure_port: 443
+
+metallb_additional_address_pools: {}
