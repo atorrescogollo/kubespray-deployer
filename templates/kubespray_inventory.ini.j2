@@ -4,9 +4,11 @@
 {%- for k,v in (node.vars|default({})).items() %} {{k}}={{v|quote}}{%- endfor %}
 
 {% endfor %}
+
 {% for node in worker_nodes %}
 {{node.hostname}}
 {%- for k, v in (node.vars|default({})).items() %} {{k}}={{v|quote}}{%- endfor %}
+
 {% endfor %}
 
 [kube-master]
