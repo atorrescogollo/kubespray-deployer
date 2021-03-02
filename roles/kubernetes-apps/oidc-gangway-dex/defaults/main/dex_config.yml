@@ -34,7 +34,7 @@ dex_connector_ldap_groupsearch_filter: "(objectClass=group)"
 dex_connector_ldap_usersearch_username: sAMAccountName
 dex_connector_ldap_usersearch_idattr: DN
 dex_connector_ldap_usersearch_emailattr: mail
-dex_connector_ldap_usersearch_nameattr: cn
+dex_connector_ldap_usersearch_nameattr: sAMAccountName
 
 ### User Search Bindings
 dex_connector_ldap_groupsearch_userattr: DN
