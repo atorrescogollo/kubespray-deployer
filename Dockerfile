@@ -8,6 +8,8 @@ ENV KUBESPRAY_HOME=/kubespray \
 
 # Add this repo to /deployer
 ADD . /deployer
-RUN chmod 700 /deployer/docker_entrypoint.sh && mkdir -p /work
+RUN pip3 install -r /deployer/requirements.txt \
+    && chmod 700 /deployer/docker_entrypoint.sh \
+    && mkdir -p /work
 WORKDIR /deployer
 ENTRYPOINT [ "/deployer/docker_entrypoint.sh" ]
