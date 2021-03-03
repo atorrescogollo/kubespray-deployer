@@ -25,25 +25,7 @@
   import_playbook: "{{kubespray_home}}/cluster.yml"
 
 - name: "Deploy Cluster | Install kubernetes-apps"
-  hosts: kube-master
   vars:
     kubespray_home: "{{ lookup('env', 'KUBESPRAY_HOME') | default('/kubespray') }}"
     deployer_home:  "{{ lookup('env', 'DEPLOYER_HOME')  | default('/deployer')  }}"
-  roles:
-
-  - name: "Deploy Cluster | Configure ingress-nginx extras"
-    role: "{{deployer_home}}/roles/kubernetes-apps/ingress-nginx-extras"
-    when: ingress_nginx_loadbalancer | default(false)
-
-  - name: "Deploy Cluster | Install argocd"
-    role: "{{deployer_home}}/roles/kubernetes-apps/argocd"
-    when: argocd_enabled | default(false)
-
-  - name: "Deploy Cluster | Install Gangway and Dex for OIDC AuthN/AuthZ"
-    role: "{{deployer_home}}/roles/kubernetes-apps/oidc-gangway-dex"
-    # OIDC needs ingress to be reachable and with a valid certificate
-    #when: oidc_gangway_dex_enabled | default(false)
-    when:
-    - ingress_nginx_loadbalancer | default(false)
-    - ingress_nginx_tls_cert is defined
-    - oidc_gangway_dex_enabled | default(false)
+  import_playbook: "{{deployer_home}}/kubernetes-apps.yml"

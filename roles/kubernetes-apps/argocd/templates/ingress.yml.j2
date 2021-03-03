@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  name: argocd
+  namespace: "{{argocd_namespace}}"
+spec:
+  rules:
+  - host: "argocd.{{ ingress_dns_wildcard_base }}"
+    http:
+      paths:
+      - backend:
+          serviceName: argocd-server
+          servicePort: 443

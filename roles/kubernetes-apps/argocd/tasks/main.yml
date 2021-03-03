@@ -24,6 +24,7 @@
     - file: "installer-{{argocd_version_tag}}.yml"
       namespace: "{{ argocd_namespace }}"
       url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{argocd_version_tag}}/manifests/install.yaml"
+    - file: ingress.yml
   when:
     - inventory_hostname == groups['kube-master'][0]
 
