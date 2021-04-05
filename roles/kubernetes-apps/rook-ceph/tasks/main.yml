@@ -1,0 +1,99 @@
+- name: Rook-Ceph | Delete addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/rook-ceph"
+    state: absent
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Rook-Ceph | Create addon dir
+  become: yes
+  file:
+    path: "{{ kube_config_dir }}/addons/rook-ceph"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+# https://rook.io/docs/rook/v1.5/ceph-quickstart.html#deploy-the-rook-operator
+- name: "Rook-Ceph | Download rook (version={{rook_ceph_version}})"
+  become: yes
+  git:
+    repo: 'https://github.com/rook/rook.git'
+    dest: "{{ kube_config_dir }}/addons/rook-ceph/rook-src"
+    version: "{{rook_ceph_version}}"
+    depth: 1
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: "Rook-Ceph | Get needed files from rook examples"
+  become: yes
+  copy:
+    src: "{{ kube_config_dir }}/addons/rook-ceph/rook-src/cluster/examples/kubernetes/ceph/{{item}}"
+    dest: "{{ kube_config_dir }}/addons/rook-ceph/{{item}}"
+    remote_src: yes
+  with_items:
+  - crds.yaml
+  - common.yaml
+  - operator.yaml
+  - common-external.yaml
+  loop_control:
+    label: "{{ kube_config_dir }}/addons/{{item}}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: "Rook-Ceph | Apply operator manifests"
+  become: yes
+  kube:
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/addons/rook-ceph/{{item}}"
+    state: latest
+  with_items:
+  - crds.yaml
+  - common.yaml
+  - operator.yaml
+  - common-external.yaml
+  loop_control:
+    label: "{{ item }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+
+- name: Rook-Ceph | Templates list
+  set_fact:
+    rook_ceph_templates:
+    - file: external_secrets_configmap.yml
+      sensitive_data: yes
+    - file: external_cephcluster.yml
+    - file: storageclass.yml
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Rook-Ceph | Create manifests from templates
+  become: yes
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ kube_config_dir }}/addons/rook-ceph/{{ item.file }}"
+    owner: "{{ 'root' if item.sensitive_data|default(false) else omit }}"
+    group: "{{ 'root' if item.sensitive_data|default(false) else omit }}"
+    mode: "{{  '0600' if item.sensitive_data|default(false) else omit }}"
+  with_items: "{{ rook_ceph_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - item.when | default(true)
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: Rook-Ceph | Apply manifests
+  become: yes
+  kube:
+    filename: "{{ kube_config_dir }}/addons/rook-ceph/{{ item.file }}"
+    state: latest
+  with_items: "{{ rook_ceph_templates }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - item.when | default(true)
+    - inventory_hostname == groups['kube-master'][0]
