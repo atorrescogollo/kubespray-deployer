@@ -15,6 +15,8 @@
         enabled: "{{ ingress_nginx_loadbalancer | default(false) }}"
       - file: "{{deployer_home}}/roles/kubernetes-apps/oidc-gangway-dex/tasks/assertions.yml"
         enabled: "{{ oidc_gangway_dex_enabled | default(false) }}"
+      - file: "{{deployer_home}}/roles/kubernetes-apps/rook-ceph/tasks/assertions.yml"
+        enabled: "{{ rook_ceph_enabled | default(false) }}"
       loop_control:
         loop_var: role_assertion_target
 

@@ -28,3 +28,10 @@
     - oidc_gangway_dex_enabled | default(false)
     tags:
     - oidc-gangway-dex
+
+  - name: "Deploy Cluster | Install Rook-Ceph"
+    role: "{{deployer_home}}/roles/kubernetes-apps/rook-ceph"
+    when:
+    - rook_ceph_enabled | default(false)
+    tags:
+    - rook-ceph

@@ -1,0 +1,18 @@
+- name: "Rook-Ceph | Assert parameters"
+  assert:
+    that:
+    - rook_ceph_pool is defined
+    # Currently not supported other than external cluster:
+    - 'rook_ceph_cluster in ["external"]'
+  when: rook_ceph_enabled
+
+- name: "Rook-Ceph | Assert parameters (external ceph)"
+  assert:
+    that:
+    # https://rook.io/docs/rook/v1.5/ceph-cluster-crd.html#external-cluster
+    - rook_ceph_external_fsid is defined
+    - rook_ceph_external_mon_data is defined
+    - rook_ceph_external_admin_secret is defined
+  when:
+    - rook_ceph_enabled
+    - 'rook_ceph_cluster == "external"'
