@@ -23,11 +23,9 @@
 - name: "Deploy Cluster | Call \"cluster.yml\" from kubespray"
   vars:
     kubespray_home: "{{ lookup('env', 'KUBESPRAY_HOME') | default('/kubespray') }}"
-    deployer_home:  "{{ lookup('env', 'DEPLOYER_HOME')  | default('/deployer')  }}"
   import_playbook: "{{kubespray_home}}/cluster.yml"
 
 - name: "Deploy Cluster | Install kubernetes-apps"
   vars:
-    kubespray_home: "{{ lookup('env', 'KUBESPRAY_HOME') | default('/kubespray') }}"
     deployer_home:  "{{ lookup('env', 'DEPLOYER_HOME')  | default('/deployer')  }}"
-  import_playbook: "{{deployer_home}}/kubernetes-apps.yml"
+  import_playbook: "{{deployer_home}}/playbooks/kubernetes-apps.yml"
