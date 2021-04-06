@@ -3,7 +3,7 @@
     that:
     - rook_ceph_pool is defined
     # Currently not supported other than external cluster:
-    - 'rook_ceph_cluster in ["external"]'
+    - 'rook_ceph_cluster|default("external") in ["external"]'
   when: rook_ceph_enabled
 
 - name: "Rook-Ceph | Assert parameters (external ceph)"
@@ -15,4 +15,4 @@
     - rook_ceph_external_admin_secret is defined
   when:
     - rook_ceph_enabled
-    - 'rook_ceph_cluster == "external"'
+    - 'rook_ceph_cluster|default("external") == "external"'
